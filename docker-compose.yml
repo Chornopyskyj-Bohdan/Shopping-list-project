@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: shop_user
+      POSTGRES_PASSWORD: secret_password
+      POSTGRES_DB: shopping_list
+    volumes:
+      # Постійне сховище для БД (щоб дані не зникли після рестарту)
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend-net
+    healthcheck:
+      # Перевіряємо, чи БД дійсно готова приймати з'єднання
+      test: ["CMD-SHELL", "pg_isready -U shop_user -d shopping_list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./src/api
+    ports:
+      - "3000:3000"
+    environment:
+      # Зв'язуємо з сервісом db за його іменем у compose
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=shop_user
+      - DB_PASS=secret_password
+      - DB_NAME=shopping_list
+    networks:
+      - frontend-net
+      - backend-net
+    depends_on:
+      db:
+        # API запуститься ТІЛЬКИ після успішного healthcheck бази даних
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./src/web
+    ports:
+      - "8080:8080"
+    networks:
+      - frontend-net
+    depends_on:
+      - api
+
+networks:
+  frontend-net:
+    driver: bridge
+  backend-net:
+    driver: bridge
+    internal: true # База даних ізольована від зовнішньої мережі (Security)
+
+volumes:
+  pgdata:

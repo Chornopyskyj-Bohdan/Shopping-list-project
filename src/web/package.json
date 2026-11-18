@@ -1,0 +1,6 @@
+{
+  "name": "shopping-list-web",
+  "scripts": {
+    "build": "mkdir -p build && echo '<meta charset=\"UTF-8\"><h1>Shopping List Frontend Працює!</h1>' > build/index.html"
+  }
+}
