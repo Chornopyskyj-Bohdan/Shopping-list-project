@@ -66,7 +66,9 @@ jobs:
       - name: Get short commit SHA
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
+      - name: Set lowercase repository owner
+        run: echo "REPO_OWNER=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_ENV
+        
       # Збірка та публікація API
       - name: Build and push API image
         uses: docker/build-push-action@v5
@@ -75,9 +77,8 @@ jobs:
           push: true
           # Використовуємо тегування хешем коміту (immutable tags)
           tags: |
-            ghcr.io/${{ github.repository_owner }}/shopping-list-api:${{ steps.vars.outputs.sha_short }}
-            ghcr.io/${{ github.repository_owner }}/shopping-list-api:latest
-
+            ghcr.io/${{ env.REPO_OWNER }}/shopping-list-api:${{ steps.vars.outputs.sha_short }}
+            ghcr.io/${{ env.REPO_OWNER }}/shopping-list-api:latest
       # Збірка та публікація Web
       - name: Build and push Web image
         uses: docker/build-push-action@v5
@@ -85,5 +86,5 @@ jobs:
           context: ./src/web
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/shopping-list-web:${{ steps.vars.outputs.sha_short }}
-            ghcr.io/${{ github.repository_owner }}/shopping-list-web:latest
+            ghcr.io/${{ env.REPO_OWNER }}/shopping-list-web:${{ steps.vars.outputs.sha_short }}
+            ghcr.io/${{ env.REPO_OWNER }}/shopping-list-web:latest
