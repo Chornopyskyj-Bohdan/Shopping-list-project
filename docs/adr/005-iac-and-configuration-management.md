@@ -26,16 +26,16 @@
 
 ### 1. Розгортання інфраструктури через Terraform
 Успішне створення хмарних ресурсів та отримання публічної IP-адреси:
-![Виконання Terraform](./images/terraform-apply.png)
+![Виконання Terraform](../images/terraform-apply.png)
 
 ### 2. Стан віртуальної машини в порталі Azure
 Віртуальна машина `vm-shopping-list` запущена у регіоні Sweden Central:
-![Сторінка віртуальної машини](./images/azure-vm-page.png)
+![Сторінка віртуальної машини](../images/azure-vm-page.png)
 
 ### 3. Автоматизація конфігурації через Ansible
 Виконання плейбуку завершилося без помилок (`failed=0`):
-![Виконання Ansible](./images/ansible-execution.png)
+![Виконання Ansible](../images/ansible-execution.png)
 
 ### 4. Робота розгорнутого застосунку
 Контейнери сервісів активні, веб-інтерфейс доступний у браузері:
-![Робота сервера](./images/server-running.png)
+![Робота сервера](../images/server-running.png)
