@@ -1,0 +1,71 @@
+---
+- name: Налаштування сервера та деплой Shopping List App
+  hosts: webservers
+  become: yes
+
+  vars:
+    repo_url: "https://github.com/Chornopyskyj-Bohdan_GITHUB/Shopping-list-project.git"
+    app_dir: "/opt/shopping-list"
+
+  tasks:
+    - name: Оновлення кешу пакетів apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Встановлення базових утиліт (git, curl, ca-certificates)
+      apt:
+        name:
+          - git
+          - curl
+          - ca-certificates
+          - gnupg
+        state: present
+
+    - name: Додавання офіційного GPG-ключа Docker
+      shell: |
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg --yes
+        chmod a+r /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Додавання репозиторію Docker
+      shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+      args:
+        creates: /etc/apt/sources.list.d/docker.list
+
+    - name: Встановлення Docker Engine та Docker Compose Plugin
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Запуск та додавання служби Docker в автозавантаження
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Додавання користувача azureuser до групи docker
+      user:
+        name: azureuser
+        groups: docker
+        append: yes
+
+    - name: Клонування або оновлення репозиторію проєкту
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: Lab-4
+        force: yes
+
+    - name: Запуск контейнерів через Docker Compose
+      command: docker compose up -d --build
+      args:
+        chdir: "{{ app_dir }}"
