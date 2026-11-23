@@ -4,7 +4,7 @@
   become: yes
 
   vars:
-    repo_url: "https://github.com/Chornopyskyj-Bohdan_GITHUB/Shopping-list-project.git"
+    repo_url: "https://github.com/Chornopyskyj-Bohdan/Shopping-list-project.git"
     app_dir: "/opt/shopping-list"
 
   tasks:
@@ -62,7 +62,7 @@
       git:
         repo: "{{ repo_url }}"
         dest: "{{ app_dir }}"
-        version: Lab-4
+        version: Lab-5
         force: yes
 
     - name: Запуск контейнерів через Docker Compose

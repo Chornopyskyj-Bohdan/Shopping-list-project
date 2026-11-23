@@ -3,9 +3,9 @@ name: CI Pipeline
 # Пайплайн запускається при пуші в main та при створенні Pull Request
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "Lab-5" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "Lab-5" ]
 
 jobs:
   # Етап 1: Перевірка якості та безпеки (Quality & Security Stage)
@@ -43,7 +43,7 @@ jobs:
   build_and_publish:
     # Запускається тільки якщо попередній Job пройшов успішно і це пуш в main
     needs: quality_and_security
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Lab-5')
     runs-on: ubuntu-latest
     
     # Надаємо права запису для GitHub Token (щоб пушити в реєстр)
@@ -88,3 +88,48 @@ jobs:
           tags: |
             ghcr.io/${{ env.REPO_OWNER }}/shopping-list-web:${{ steps.vars.outputs.sha_short }}
             ghcr.io/${{ env.REPO_OWNER }}/shopping-list-web:latest
+
+deploy:
+    name: Безперервне розгортання в Azure
+    # Цей етап запуститься ТІЛЬКИ після успішного завершення етапу збірки (наприклад, 'build_and_push')
+    needs: build_and_publish # ЗАМІНІТЬ 'quality_and_security' на назву вашого попереднього Job'а зі збірки!
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Lab-5')
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Виконання деплою через SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            # Переходимо в директорію проєкту
+            cd /opt/shopping-list
+            
+            # Оновлюємо код із гілки Lab-5 (або main)
+            sudo git fetch origin
+            sudo git checkout ${{ github.ref_name }}
+            sudo git pull origin ${{ github.ref_name }}
+            
+            # Оновлюємо образи з GitHub Container Registry (ghcr.io)
+            # Якщо ваші образи приватні, тут потрібен 'docker login', але ми поки вважаємо їх публічними
+            sudo docker compose pull
+            
+            # Перезапускаємо контейнери з новими образами
+            sudo docker compose up -d
+            
+      - name: Smoke Test (Перевірка доступності сайту)
+        run: |
+          # Чекаємо 10 секунд, щоб сервіси встигли піднятися
+          sleep 10
+          
+          # Робимо HTTP GET запит до сайту і перевіряємо статус код (має бути 200)
+          HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" http://${{ secrets.SERVER_HOST }}:8080)
+          
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "Smoke Test пройдено! Сервіс відповідає HTTP 200."
+          else
+            echo "Smoke Test провалено! Отримано HTTP статус $HTTP_STATUS."
+            exit 1
+          fi
