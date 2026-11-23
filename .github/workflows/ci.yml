@@ -89,7 +89,7 @@ jobs:
             ghcr.io/${{ env.REPO_OWNER }}/shopping-list-web:${{ steps.vars.outputs.sha_short }}
             ghcr.io/${{ env.REPO_OWNER }}/shopping-list-web:latest
 
-deploy:
+  deploy:
     name: Безперервне розгортання в Azure
     # Цей етап запуститься ТІЛЬКИ після успішного завершення етапу збірки (наприклад, 'build_and_push')
     needs: build_and_publish # ЗАМІНІТЬ 'quality_and_security' на назву вашого попереднього Job'а зі збірки!
